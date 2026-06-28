@@ -283,13 +283,7 @@ function parseGeom(gj) {
 let poiLayerGroup = L.layerGroup(); // Κρατάει τους markers
 
 // =====================================================================
-// ΔΙΟΡΘΩΜΕΝΗ ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΔΗΜΟΣΙΑ POIs (Με το σωστό API Endpoint)
-// =====================================================================
-// =====================================================================
-// ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΔΗΜΟΣΙΑ POIs (Απόλυτο και Καθαρό URL)
-// =====================================================================
-// =====================================================================
-// ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΔΗΜΟΣΙΑ POIs (Καθαρή Σύνταξη)
+// ΝΕΑ ΘΩΡΑΚΙΣΜΕΝΗ ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΔΗΜΟΣΙΑ POIs (OSM FRANCE ENDPOINT)
 // =====================================================================
 function loadPublicPOIs() {
     // 1. Έλεγχος Zoom: Αν ο χρήστης βλέπει πολύ από μακριά, σταμάτα
@@ -309,8 +303,8 @@ function loadPublicPOIs() {
     // 4. Το ερώτημα Overpass API
     let overpassQuery = `[out:json][timeout:15];node["amenity"~"cafe|restaurant"](${bbox});out qt;`;
     
-    // 5. Δημιουργία του τελικού URL με το σωστό endpoint και το ερωτηματικό (?)
-    let finalUrl = "https://overpass-api.de" + encodeURIComponent(overpassQuery);
+    // 5. Χρήση του εναλλακτικού, σταθερού endpoint της OSM France (Λύνει οριστικά το πρόβλημα URL)
+    let finalUrl = "https://openstreetmap.fr" + encodeURIComponent(overpassQuery);
 
     // 6. Λήψη δεδομένων
     fetch(finalUrl)
@@ -335,7 +329,3 @@ function loadPublicPOIs() {
     })
     .catch(error => console.error("Σφάλμα Overpass:", error));
 }
-
-
-
-
