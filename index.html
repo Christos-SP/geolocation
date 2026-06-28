@@ -9,8 +9,6 @@
         <link rel="stylesheet" href="css/leaflet.awesome-markers.css"/>
         <link rel="stylesheet" href="css/leaflet-sidebar.css"/>
         
-        
-        
         <style>
 body {
     padding: 0;
@@ -33,8 +31,49 @@ html, body, #map {
         <script src="js/leaflet.awesome-markers.min.js"></script>
         <script src="js/papaparse.min.js"></script>
         
-        
-        
-        <script src="main.js?v=2"></script>
+        <!-- Φόρτωση του main.js με αλλαγή έκδοσης (v=3) για εξαναγκασμό ανανέωσης -->
+        <script src="main.js?v=3"></script>
+
+        <!-- ΕΝΣΩΜΑΤΩΣΗ: Ο κώδικας POIs απευθείας στο HTML για να μην επηρεάζεται από την cache -->
+        <script>
+            let poiLayerGroup = L.layerGroup();
+
+            function loadPublicPOIs() {
+                // Αν το zoom είναι πολύ μακρινό (μικρότερο από 15), καθάρισε τα σημεία και σταμάτα
+                if (map.getZoom() < 15) {
+                    poiLayerGroup.clearLayers();
+                    return;
+                }
+
+                poiLayerGroup.clearLayers();
+                poiLayerGroup.addTo(map);
+
+                let bounds = map.getBounds();
+                let bbox = bounds.getSouth() + "," + bounds.getWest() + "," + bounds.getNorth() + "," + bounds.getEast();
+
+                // Χρήση του απόλυτα σταθερού γαλλικού server με καθαρή συνένωση κειμένου
+                let overpassQuery = '[out:json][timeout:15];node["amenity"~"cafe|restaurant"](' + bbox + ');out qt;';
+                let finalUrl = "https://openstreetmap.fr" + encodeURIComponent(overpassQuery);
+
+                fetch(finalUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error("Network error");
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.elements) {
+                        data.elements.forEach(element => {
+                            if (element.lat && element.lon) {
+                                let marker = L.marker([element.lat, element.lon]);
+                                let name = element.tags.name || "Κατάστημα Εστίασης";
+                                marker.bindPopup("<b>" + name + "</b>");
+                                marker.addTo(poiLayerGroup);
+                            }
+                        });
+                    }
+                })
+                .catch(error => console.error("Σφάλμα Overpass:", error));
+            }
+        </script>
     </body>
 </html>
