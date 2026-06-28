@@ -27,7 +27,7 @@ let panelID = "my-info-panel";
  * init() is called when the page has loaded
  */
 function init() {
-  // Create a new Leaflet map centered on the continental US
+  // Create a new Leaflet map centered on Thessaloniki
   map = L.map("map").setView([40.631, 22.954], 14);
 
   // This is the Carto Positron basemap
@@ -78,24 +78,35 @@ function init() {
   });
   
   // Ζητάει από τον browser την τοποθεσία του χρήστη
-map.locate({ 
-    setView: false,   // Μεταφέρει αυτόματα τον χάρτη στη θέση του χρήστη
-    maxZoom: 16      // Ορίζει το επίπεδο zoom κατά την εύρεση
-});
+  map.locate({ 
+      setView: false,   // Μεταφέρει αυτόματα τον χάρτη στη θέση του χρήστη
+      maxZoom: 16      // Ορίζει το επίπεδο zoom κατά την εύρεση
+  });
 
-// Μόλις βρεθεί η τοποθεσία δημιουργεί έναν marker στη θέση του χρήστη
-map.on('locationfound', function(e) {
-    L.marker(e.latlng)
-     .addTo(map)
-     .bindPopup("Βρίσκεστε εδώ!")
-     .openPopup();
-});
+  // Μόλις βρεθεί η τοποθεσία δημιουργεί έναν marker στη θέση του χρήστη
+  map.on('locationfound', function(e) {
+      L.marker(e.latlng)
+       .addTo(map)
+       .bindPopup("Βρίσκεστε εδώ!")
+       .openPopup();
+  });
 
-// 3. Διαχείριση σφάλματος (αν ο χρήστης αρνηθεί την πρόσβαση)
-map.on('locationerror', function(e) {
-    alert("Δεν ήταν δυνατός ο εντοπισμός της θέσης σας: " + e.message);
-});
+  // Διαχείριση σφάλματος (αν ο χρήστης αρνηθεί την πρόσβαση)
+  map.on('locationerror', function(e) {
+      alert("Δεν ήταν δυνατός ο εντοπισμός της θέσης σας: " + e.message);
+  });
 
+  // =====================================================================
+  // ΝΕΟ ΚΟΜΜΑΤΙ: ΕΝΣΩΜΑΤΩΣΗ ΔΗΜΟΣΙΩΝ ΣΗΜΕΙΩΝ ΕΝΔΙΑΦΕΡΟΝΤΟΣ (POIs)
+  // =====================================================================
+  var opl = new L.OverpassLayer({
+    query: "node[\"amenity\"~\"cafe|restaurant\"](BBOX); out;",
+    onSuccess: function(data) {
+      console.log("Δημόσια POIs φορτώθηκαν επιτυχώς!");
+    }
+  });
+  map.addLayer(opl);
+  // =====================================================================
   
 }
 
