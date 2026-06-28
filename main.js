@@ -9,8 +9,8 @@
 // these URLs come from Google Sheets 'shareable link' form
 // the first is the geometry layer and the second the points
 
-//let geomURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsAyA0Hpk_-WpKyN1dfqi5IPEIC3rqEiL-uwElxJpw_U7BYntc8sDw-8sWsL87JCDU4lVg2aNi65ES/pub?output=csv";
-//let pointsURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSFQw9sVY16eQmN5TIjOH7CUaxeZnl_v6LcdE2goig1pSe9I3hipeOn1sOwmC4fS0AURefRWwcKExct/pub?output=csv";
+//let geomURL = "https://google.com";
+//let pointsURL = "https://google.com";
 
 let geomURL = "leaflet_geoms2.csv";      
 let pointsURL = "leaflet_points2.csv";  
@@ -35,7 +35,7 @@ function init() {
     "https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}{r}.png",
     {
       attribution:
-        "&copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> &copy; <a href='http://cartodb.com/attributions'>CartoDB</a>",
+        "&copy; <a href='http://openstreetmap.org'>OpenStreetMap</a> &copy; <a href='http://cartodb.com'>CartoDB</a>",
       subdomains: "abcd",
       maxZoom: 19,
     }
@@ -96,23 +96,13 @@ function init() {
       alert("Δεν ήταν δυνατός ο εντοπισμός της θέσης σας: " + e.message);
   });
 
-    // =====================================================================
-  // ΒΕΛΤΙΣΤΟΠΟΙΗΜΕΝΟ ΚΟΜΜΑΤΙ: ΓΡΗΓΟΡΗ ΦΟΡΤΩΣΗ ΔΗΜΟΣΙΩΝ POIs
   // =====================================================================
-  var opl = new L.OverpassLayer({
-    // Το "out qt;" επιστρέφει τα δεδομένα ταχύτερα χωρίς περιττή ταξινόμηση
-    query: "node[\"amenity\"~\"cafe|restaurant\"](BBOX); out qt;", 
-    
-    // Κρίσιμη ρύθμιση: Το plugin θα λειτουργεί ΜΟΝΟ από το επίπεδο zoom 15 και πάνω 
-    // Έτσι δεν κολλάει ο χάρτης όταν ο χρήστης ξεμακρύνει (zoom out)
-    minZoom: 15, 
-    
-    onSuccess: function(data) {
-      console.log("Τα POIs φορτώθηκαν γρήγορα!");
-    }
-  });
-  map.addLayer(opl);
+  // ΑΛΛΑΓΗ ΕΔΩ: Καλούμε τη νέα συνάρτηση ΜΟΝΟ όταν σταματάει η κίνηση (moveend)
   // =====================================================================
+  map.on("moveend", loadPublicPOIs);
+  loadPublicPOIs(); // Εκτέλεση μία φορά στην αρχή για να φορτώσει αμέσως
+  
+}
 
 
 
@@ -271,15 +261,55 @@ function parseGeom(gj) {
   // Coordinates
   else {
     let type;
-    if (typeof gj[0] == "number") {
+    if (typeof gj == "number") {
       type = "Point";
-    } else if (typeof gj[0][0] == "number") {
+    } else if (typeof gj == "number") {
       type = "LineString";
-    } else if (typeof gj[0][0][0] == "number") {
+    } else if (typeof gj == "number") {
       type = "Polygon";
     } else {
       type = "MultiPolygon";
     }
     return [{ type: "Feature", geometry: { type: type, coordinates: gj } }];
   }
+}
+
+// =====================================================================
+// ΠΡΟΣΘΗΚΗ ΕΔΩ: ΝΕΑ ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΑΚΑΡΙΑΙΑ ΦΟΡΤΩΣΗ POIs
+// =====================================================================
+let poiLayerGroup = L.layerGroup(); // Κρατάει τους markers
+
+function loadPublicPOIs() {
+    // 1. Έλεγχος Zoom: Αν ο χρήστης βλέπει πολύ από μακριά, μην κάνεις τίποτα
+    if (map.getZoom() < 15) {
+        poiLayerGroup.clearLayers();
+        return;
+    }
+
+    // 2. Καθαρισμός των παλιών σημείων
+    poiLayerGroup.clearLayers();
+    poiLayerGroup.addTo(map);
+
+    // 3. Υπολογισμός των ορίων της οθόνης του χρήστη
+    let bounds = map.getBounds();
+    let bbox = bounds.getSouth() + "," + bounds.getWest() + "," + bounds.getNorth() + "," + bounds.getEast();
+
+    // 4. Ερώτημα Overpass API (Ζητάμε cafe και restaurant)
+    let overpassQuery = `[out:json][timeout:15];node["amenity"~"cafe|restaurant"](${bbox});out qt;`;
+    let url = "https://overpass-api.de" + encodeURIComponent(overpassQuery);
+
+    // 5. Λήψη δεδομένων
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+        data.elements.forEach(element => {
+            if (element.lat && element.lon) {
+                let marker = L.marker([element.lat, element.lon]);
+                let name = element.tags.name || "Σημείο Ενδιαφέροντος";
+                marker.bindPopup(`<b>${name}</b>`);
+                marker.addTo(poiLayerGroup);
+            }
+        });
+    })
+    .catch(error => console.error("Σφάλμα Overpass:", error));
 }
