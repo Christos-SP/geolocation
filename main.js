@@ -277,6 +277,11 @@ function parseGeom(gj) {
 // =====================================================================
 let poiLayerGroup = L.layerGroup(); // Κρατάει τους markers
 
+// =====================================================================
+// ΔΙΟΡΘΩΜΕΝΗ ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΔΗΜΟΣΙΑ POIs (Καφέ & Εστιατόρια)
+// =====================================================================
+let poiLayerGroup = L.layerGroup(); // Κρατάει τους markers
+
 function loadPublicPOIs() {
     // 1. Έλεγχος Zoom: Αν ο χρήστης βλέπει πολύ από μακριά, μην κάνεις τίποτα
     if (map.getZoom() < 15) {
@@ -292,22 +297,35 @@ function loadPublicPOIs() {
     let bounds = map.getBounds();
     let bbox = bounds.getSouth() + "," + bounds.getWest() + "," + bounds.getNorth() + "," + bounds.getEast();
 
-    // 4. Ερώτημα Overpass API (Ζητάμε cafe και restaurant)
+    // 4. Το ερώτημα Overpass API (Ζητάμε cafe και restaurant)
     let overpassQuery = `[out:json][timeout:15];node["amenity"~"cafe|restaurant"](${bbox});out qt;`;
-    let url = "https://overpass-api.de" + encodeURIComponent(overpassQuery);
+    
+    // 5. Ασφαλής κατασκευή του URL με URLSearchParams για την αποφυγή σφαλμάτων κωδικοποίησης
+    let baseUrl = "https://overpass-api.de";
+    let params = new URLSearchParams({ data: overpassQuery });
+    let finalUrl = baseUrl + "?" + params.toString();
 
-    // 5. Λήψη δεδομένων
-    fetch(url)
-    .then(response => response.json())
+    // 6. Λήψη δεδομένων
+    fetch(finalUrl)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Η απάντηση του δικτύου δεν ήταν επιτυχής");
+        }
+        return response.json();
+    })
     .then(data => {
-        data.elements.forEach(element => {
-            if (element.lat && element.lon) {
-                let marker = L.marker([element.lat, element.lon]);
-                let name = element.tags.name || "Σημείο Ενδιαφέροντος";
-                marker.bindPopup(`<b>${name}</b>`);
-                marker.addTo(poiLayerGroup);
-            }
-        });
+        if (data && data.elements) {
+            data.elements.forEach(element => {
+                if (element.lat && element.lon) {
+                    let marker = L.marker([element.lat, element.lon]);
+                    let name = element.tags.name || "Κατάστημα Εστίασης";
+                    
+                    marker.bindPopup(`<b>${name}</b>`);
+                    marker.addTo(poiLayerGroup);
+                }
+            });
+        }
     })
     .catch(error => console.error("Σφάλμα Overpass:", error));
 }
+
