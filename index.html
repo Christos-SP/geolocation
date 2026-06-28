@@ -10,18 +10,9 @@
         <link rel="stylesheet" href="css/leaflet-sidebar.css"/>
         
         <style>
-body {
-    padding: 0;
-    margin: 0;
-}
-html, body, #map {
-    height: 100%;
-    width: 100%;
-}
-#sidebar-content, #sidebar-title {
-    word-break: break-word;
-    margin-right: 40px;
-}
+body { padding: 0; margin: 0; }
+html, body, #map { height: 100%; width: 100%; }
+#sidebar-content, #sidebar-title { word-break: break-word; margin-right: 40px; }
         </style>
     </head>
     <body>
@@ -31,35 +22,34 @@ html, body, #map {
         <script src="js/leaflet.awesome-markers.min.js"></script>
         <script src="js/papaparse.min.js"></script>
         
-        <!-- Αλλάζουμε την έκδοση σε v=99 για να εξαναγκάσουμε τον browser να καθαρίσει την cache -->
-        <script src="main.js?v=99"></script>
+        <!-- v=500 για να σβήσει κάθε παλιά ανάμνηση του main.js -->
+        <script src="main.js?v=500"></script>
 
-        <!-- Inline Script που χρησιμοποιεί GET με ασφαλή κατασκευή URL -->
+        <!-- Inline Script που εκτελεί POST αίτημα -->
         <script>
-            let osmLayerGroup = L.layerGroup();
+            let osmPoiGroup = L.layerGroup();
 
-            function fetchOSMData() {
-                // Έλεγχος Zoom: Μόνο από το επίπεδο 15 και πάνω
+            function getPublicLocations() {
                 if (map.getZoom() < 15) {
-                    osmLayerGroup.clearLayers();
+                    osmPoiGroup.clearLayers();
                     return;
                 }
 
-                osmLayerGroup.clearLayers();
-                osmLayerGroup.addTo(map);
+                osmPoiGroup.clearLayers();
+                osmPoiGroup.addTo(map);
 
                 let bounds = map.getBounds();
                 let bbox = bounds.getSouth() + "," + bounds.getWest() + "," + bounds.getNorth() + "," + bounds.getEast();
-                
-                // Το ερώτημα Overpass
                 let query = '[out:json][timeout:15];node["amenity"~"cafe|restaurant"](' + bbox + ');out qt;';
 
-                // ΑΣΦΑΛΗΣ ΜΕΘΟΔΟΣ GET: Η κλάση URLSearchParams αναλαμβάνει το σωστό χτίσιμο του URL
-                let baseUrl = "https://overpass-api.de";
-                let params = new URLSearchParams({ data: query });
-                let finalUrl = baseUrl + "?" + params.toString();
-
-                fetch(finalUrl)
+                // ΕΔΩ ΓΙΝΕΤΑΙ Η ΜΕΘΟΔΟΣ POST
+                fetch("https://openstreetmap.fr", {
+                    method: "POST", // Ορίζουμε τη μέθοδο
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded" // Δηλώνουμε τη μορφή των δεδομένων
+                    },
+                    body: "data=" + encodeURIComponent(query) // Στέλνουμε το query κρυμμένο στο σώμα
+                })
                 .then(res => {
                     if (!res.ok) throw new Error("API Error");
                     return res.json();
@@ -71,17 +61,12 @@ html, body, #map {
                                 let marker = L.marker([element.lat, element.lon]);
                                 let name = element.tags.name || "Κατάστημα Εστίασης";
                                 marker.bindPopup("<b>" + name + "</b>");
-                                marker.addTo(osmLayerGroup);
+                                marker.addTo(osmPoiGroup);
                             }
                         });
                     }
                 })
                 .catch(err => console.error("Σφάλμα Overpass:", err));
-            }
-
-            // Κρατάμε και το παλιό όνομα συνάρτησης για περίπτωση που έχει ξεμείνει στη μνήμη
-            function loadPublicPOIs() {
-                fetchOSMData();
             }
         </script>
     </body>
