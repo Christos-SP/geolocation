@@ -61,6 +61,8 @@ function init() {
     sidebar.close(panelID);
   });
 
+
+
   // Use PapaParse to load data from Google Sheets
   // And call the respective functions to add those to the map.
   Papa.parse(geomURL, {
@@ -73,7 +75,30 @@ function init() {
     header: true,
     complete: addPoints,
   });
+  
+  // Ζητάει από τον browser την τοποθεσία του χρήστη
+map.locate({ 
+    setView: false,   // Μεταφέρει αυτόματα τον χάρτη στη θέση του χρήστη
+    maxZoom: 16      // Ορίζει το επίπεδο zoom κατά την εύρεση
+});
+
+// Μόλις βρεθεί η τοποθεσία δημιουργεί έναν marker στη θέση του χρήστη
+map.on('locationfound', function(e) {
+    L.marker(e.latlng)
+     .addTo(map)
+     .bindPopup("Βρίσκεστε εδώ!")
+     .openPopup();
+});
+
+// 3. Διαχείριση σφάλματος (αν ο χρήστης αρνηθεί την πρόσβαση)
+map.on('locationerror', function(e) {
+    alert("Δεν ήταν δυνατός ο εντοπισμός της θέσης σας: " + e.message);
+});
+
+  
 }
+
+
 
 /*
  * Expects a JSON representation of the table with properties columns
