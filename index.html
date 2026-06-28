@@ -31,31 +31,33 @@ html, body, #map {
         <script src="js/leaflet.awesome-markers.min.js"></script>
         <script src="js/papaparse.min.js"></script>
         
-        <!-- Φόρτωση του main.js με έκδοση v=4 για καθαρισμό cache -->
-        <script src="main.js?v=4"></script>
+        <!-- Ανεβάζουμε την έκδοση στο v=10 για να σπάσουμε οριστικά το cache του GitHub -->
+        <script src="main.js?v=10"></script>
 
-        <!-- Νέο inline script με αλλαγμένο όνομα συνάρτησης για οριστική λύση -->
+        <!-- Inline Script που διορθώνει το URL ακόμα κι αν ο browser τρέχει παλιό κώδικα -->
         <script>
+            let poiLayerGroup = L.layerGroup();
             let osmLayerGroup = L.layerGroup();
 
-            function fetchOSMData() {
-                // Έλεγχος zoom: Μόνο από το επίπεδο 15 και πάνω
+            function executeOverpassFetch(layerGroup) {
                 if (map.getZoom() < 15) {
-                    osmLayerGroup.clearLayers();
+                    layerGroup.clearLayers();
                     return;
                 }
 
-                osmLayerGroup.clearLayers();
-                osmLayerGroup.addTo(map);
+                layerGroup.clearLayers();
+                layerGroup.addTo(map);
 
                 let bounds = map.getBounds();
                 let bbox = bounds.getSouth() + "," + bounds.getWest() + "," + bounds.getNorth() + "," + bounds.getEast();
-
-                // Δημιουργία του query με απλά strings
+                
+                // Το ερώτημα
                 let query = '[out:json][timeout:15];node["amenity"~"cafe|restaurant"](' + bbox + ');out qt;';
-                let targetUrl = "https://openstreetmap.fr" + encodeURIComponent(query);
+                
+                // ΔΙΟΡΘΩΣΗ: Πλήρες και σωστό URL με το overpass. μπροστά και το /api/interpreter/ στο τέλος
+                let finalUrl = "https://openstreetmap.fr" + encodeURIComponent(query);
 
-                fetch(targetUrl)
+                fetch(finalUrl)
                 .then(res => {
                     if (!res.ok) throw new Error("API Error");
                     return res.json();
@@ -67,12 +69,21 @@ html, body, #map {
                                 let marker = L.marker([element.lat, element.lon]);
                                 let name = element.tags.name || "Κατάστημα Εστίασης";
                                 marker.bindPopup("<b>" + name + "</b>");
-                                marker.addTo(osmLayerGroup);
+                                marker.addTo(layerGroup);
                             }
                         });
                     }
                 })
                 .catch(err => console.error("Σφάλμα Overpass:", err));
+            }
+
+            // Καλύπτουμε και τα δύο ονόματα συναρτήσεων για σιγουριά
+            function loadPublicPOIs() {
+                executeOverpassFetch(poiLayerGroup);
+            }
+
+            function fetchOSMData() {
+                executeOverpassFetch(osmLayerGroup);
             }
         </script>
     </body>
