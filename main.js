@@ -282,6 +282,9 @@ function parseGeom(gj) {
 // =====================================================================
 let poiLayerGroup = L.layerGroup(); // Κρατάει τους markers
 
+// =====================================================================
+// ΔΙΟΡΘΩΜΕΝΗ ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΔΗΜΟΣΙΑ POIs (Με το σωστό API Endpoint)
+// =====================================================================
 function loadPublicPOIs() {
     // 1. Έλεγχος Zoom: Αν ο χρήστης βλέπει πολύ από μακριά, μην κάνεις τίποτα
     if (map.getZoom() < 15) {
@@ -297,10 +300,10 @@ function loadPublicPOIs() {
     let bounds = map.getBounds();
     let bbox = bounds.getSouth() + "," + bounds.getWest() + "," + bounds.getNorth() + "," + bounds.getEast();
 
-    // 4. Το ερώτημα Overpass API (Ζητάμε cafe και restaurant)
+    // 4. Το ερώτημα Overpass API
     let overpassQuery = `[out:json][timeout:15];node["amenity"~"cafe|restaurant"](${bbox});out qt;`;
     
-    // 5. Ασφαλής κατασκευή του URL με URLSearchParams για την αποφυγή σφαλμάτων κωδικοποίησης
+    // 5. ΔΙΟΡΘΩΣΗ: Προσθήκη του /api/interpreter για να μην χτυπάει το CORS σφάλμα
     let baseUrl = "https://overpass-api.de";
     let params = new URLSearchParams({ data: overpassQuery });
     let finalUrl = baseUrl + "?" + params.toString();
@@ -328,4 +331,5 @@ function loadPublicPOIs() {
     })
     .catch(error => console.error("Σφάλμα Overpass:", error));
 }
+
 
