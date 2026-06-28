@@ -31,31 +31,33 @@ html, body, #map {
         <script src="js/leaflet.awesome-markers.min.js"></script>
         <script src="js/papaparse.min.js"></script>
         
-        <!-- Ανεβάζουμε την έκδοση στο v=10 για να σπάσουμε οριστικά το cache του GitHub -->
-        <script src="main.js?v=10"></script>
+        <!-- Αλλάζουμε την έκδοση σε v=99 για να εξαναγκάσουμε τον browser να καθαρίσει την cache -->
+        <script src="main.js?v=99"></script>
 
-        <!-- Inline Script που διορθώνει το URL ακόμα κι αν ο browser τρέχει παλιό κώδικα -->
+        <!-- Inline Script που χρησιμοποιεί GET με ασφαλή κατασκευή URL -->
         <script>
-            let poiLayerGroup = L.layerGroup();
             let osmLayerGroup = L.layerGroup();
 
-            function executeOverpassFetch(layerGroup) {
+            function fetchOSMData() {
+                // Έλεγχος Zoom: Μόνο από το επίπεδο 15 και πάνω
                 if (map.getZoom() < 15) {
-                    layerGroup.clearLayers();
+                    osmLayerGroup.clearLayers();
                     return;
                 }
 
-                layerGroup.clearLayers();
-                layerGroup.addTo(map);
+                osmLayerGroup.clearLayers();
+                osmLayerGroup.addTo(map);
 
                 let bounds = map.getBounds();
                 let bbox = bounds.getSouth() + "," + bounds.getWest() + "," + bounds.getNorth() + "," + bounds.getEast();
                 
-                // Το ερώτημα
+                // Το ερώτημα Overpass
                 let query = '[out:json][timeout:15];node["amenity"~"cafe|restaurant"](' + bbox + ');out qt;';
-                
-                // ΔΙΟΡΘΩΣΗ: Πλήρες και σωστό URL με το overpass. μπροστά και το /api/interpreter/ στο τέλος
-                let finalUrl = "https://openstreetmap.fr" + encodeURIComponent(query);
+
+                // ΑΣΦΑΛΗΣ ΜΕΘΟΔΟΣ GET: Η κλάση URLSearchParams αναλαμβάνει το σωστό χτίσιμο του URL
+                let baseUrl = "https://overpass-api.de";
+                let params = new URLSearchParams({ data: query });
+                let finalUrl = baseUrl + "?" + params.toString();
 
                 fetch(finalUrl)
                 .then(res => {
@@ -69,7 +71,7 @@ html, body, #map {
                                 let marker = L.marker([element.lat, element.lon]);
                                 let name = element.tags.name || "Κατάστημα Εστίασης";
                                 marker.bindPopup("<b>" + name + "</b>");
-                                marker.addTo(layerGroup);
+                                marker.addTo(osmLayerGroup);
                             }
                         });
                     }
@@ -77,13 +79,9 @@ html, body, #map {
                 .catch(err => console.error("Σφάλμα Overpass:", err));
             }
 
-            // Καλύπτουμε και τα δύο ονόματα συναρτήσεων για σιγουριά
+            // Κρατάμε και το παλιό όνομα συνάρτησης για περίπτωση που έχει ξεμείνει στη μνήμη
             function loadPublicPOIs() {
-                executeOverpassFetch(poiLayerGroup);
-            }
-
-            function fetchOSMData() {
-                executeOverpassFetch(osmLayerGroup);
+                fetchOSMData();
             }
         </script>
     </body>
