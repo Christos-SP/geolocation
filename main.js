@@ -288,8 +288,11 @@ let poiLayerGroup = L.layerGroup(); // Κρατάει τους markers
 // =====================================================================
 // ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΔΗΜΟΣΙΑ POIs (Απόλυτο και Καθαρό URL)
 // =====================================================================
+// =====================================================================
+// ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΔΗΜΟΣΙΑ POIs (Καθαρή Σύνταξη)
+// =====================================================================
 function loadPublicPOIs() {
-    // 1. Έλεγχος Zoom: Αν ο χρήστης βλέπει πολύ από μακριά, μην κάνεις τίποτα
+    // 1. Έλεγχος Zoom: Αν ο χρήστης βλέπει πολύ από μακριά, σταμάτα
     if (map.getZoom() < 15) {
         poiLayerGroup.clearLayers();
         return;
@@ -306,7 +309,7 @@ function loadPublicPOIs() {
     // 4. Το ερώτημα Overpass API
     let overpassQuery = `[out:json][timeout:15];node["amenity"~"cafe|restaurant"](${bbox});out qt;`;
     
-    // 5. Απευθείας δημιουργία του URL με το /api/interpreter για την οριστική επίλυση του CORS
+    // 5. Δημιουργία του τελικού URL με το σωστό endpoint και το ερωτηματικό (?)
     let finalUrl = "https://overpass-api.de" + encodeURIComponent(overpassQuery);
 
     // 6. Λήψη δεδομένων
@@ -332,6 +335,7 @@ function loadPublicPOIs() {
     })
     .catch(error => console.error("Σφάλμα Overpass:", error));
 }
+
 
 
 
