@@ -31,34 +31,34 @@ html, body, #map {
         <script src="js/leaflet.awesome-markers.min.js"></script>
         <script src="js/papaparse.min.js"></script>
         
-        <!-- Φόρτωση του main.js με αλλαγή έκδοσης (v=3) για εξαναγκασμό ανανέωσης -->
-        <script src="main.js?v=3"></script>
+        <!-- Φόρτωση του main.js με έκδοση v=4 για καθαρισμό cache -->
+        <script src="main.js?v=4"></script>
 
-        <!-- ΕΝΣΩΜΑΤΩΣΗ: Ο κώδικας POIs απευθείας στο HTML για να μην επηρεάζεται από την cache -->
+        <!-- Νέο inline script με αλλαγμένο όνομα συνάρτησης για οριστική λύση -->
         <script>
-            let poiLayerGroup = L.layerGroup();
+            let osmLayerGroup = L.layerGroup();
 
-            function loadPublicPOIs() {
-                // Αν το zoom είναι πολύ μακρινό (μικρότερο από 15), καθάρισε τα σημεία και σταμάτα
+            function fetchOSMData() {
+                // Έλεγχος zoom: Μόνο από το επίπεδο 15 και πάνω
                 if (map.getZoom() < 15) {
-                    poiLayerGroup.clearLayers();
+                    osmLayerGroup.clearLayers();
                     return;
                 }
 
-                poiLayerGroup.clearLayers();
-                poiLayerGroup.addTo(map);
+                osmLayerGroup.clearLayers();
+                osmLayerGroup.addTo(map);
 
                 let bounds = map.getBounds();
                 let bbox = bounds.getSouth() + "," + bounds.getWest() + "," + bounds.getNorth() + "," + bounds.getEast();
 
-                // Χρήση του απόλυτα σταθερού γαλλικού server με καθαρή συνένωση κειμένου
-                let overpassQuery = '[out:json][timeout:15];node["amenity"~"cafe|restaurant"](' + bbox + ');out qt;';
-                let finalUrl = "https://openstreetmap.fr" + encodeURIComponent(overpassQuery);
+                // Δημιουργία του query με απλά strings
+                let query = '[out:json][timeout:15];node["amenity"~"cafe|restaurant"](' + bbox + ');out qt;';
+                let targetUrl = "https://openstreetmap.fr" + encodeURIComponent(query);
 
-                fetch(finalUrl)
-                .then(response => {
-                    if (!response.ok) throw new Error("Network error");
-                    return response.json();
+                fetch(targetUrl)
+                .then(res => {
+                    if (!res.ok) throw new Error("API Error");
+                    return res.json();
                 })
                 .then(data => {
                     if (data && data.elements) {
@@ -67,12 +67,12 @@ html, body, #map {
                                 let marker = L.marker([element.lat, element.lon]);
                                 let name = element.tags.name || "Κατάστημα Εστίασης";
                                 marker.bindPopup("<b>" + name + "</b>");
-                                marker.addTo(poiLayerGroup);
+                                marker.addTo(osmLayerGroup);
                             }
                         });
                     }
                 })
-                .catch(error => console.error("Σφάλμα Overpass:", error));
+                .catch(err => console.error("Σφάλμα Overpass:", err));
             }
         </script>
     </body>
