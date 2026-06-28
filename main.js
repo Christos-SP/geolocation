@@ -41,6 +41,18 @@ function init() {
     }
   ).addTo(map);
 
+  // προσθήκη δική μου
+
+  var opl = new L.OverpassLayer({
+  query: "node[\"amenity\"~\"cafe|restaurant\"](BBOX); out;",
+  onSuccess: function(data) {
+    // Το plugin δημιουργεί αυτόματα τους markers όταν μετακινείτε τον χάρτη
+  }
+});
+map.addLayer(opl);
+
+///////////////////////////////////////////
+  
   sidebar = L.control
     .sidebar({
       container: "sidebar",
