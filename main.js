@@ -12,8 +12,8 @@
 //let geomURL = "https://google.com";
 //let pointsURL = "https://google.com";
 
-let geomURL = "leaflet_geoms2.csv";      
-let pointsURL = "leaflet_points2.csv";  
+//let geomURL = "leaflet_geoms2.csv";      
+//let pointsURL = "leaflet_points2.csv";  
 
 
 
@@ -66,16 +66,16 @@ function init() {
 
   // Use PapaParse to load data from Google Sheets
   // And call the respective functions to add those to the map.
-  Papa.parse(geomURL, {
-    download: true,
-    header: true,
-    complete: addGeoms,
-  });
-  Papa.parse(pointsURL, {
-    download: true,
-    header: true,
-    complete: addPoints,
-  });
+  //Papa.parse(geomURL, {
+ //   download: true,
+ //   header: true,
+ //   complete: addGeoms,
+ // });
+//  Papa.parse(pointsURL, {
+//    download: true,
+//    header: true,
+//    complete: addPoints,
+//  });
   
   // Ζητάει από τον browser την τοποθεσία του χρήστη
   map.locate({ 
